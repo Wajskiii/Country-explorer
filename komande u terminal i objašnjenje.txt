@@ -1,0 +1,11 @@
+python -m pip install flask flask-cors requests - za instalaciju flaska
+py backend.py - pokretanje backenda (prvo se mora pokrenut backend)
+
+Iako za prvu predaju se traži samo frontend, mi nismo mogli napraviti bez da i backenda imamo, 
+zato smo već imali pripremljen REST api za ovakvu temu i kroz 3 tjedna uspjeli napraviti
+stranicu koja radi i vuće podatke. 
+htjeli smo također napraviti tako da se države filtriraju po kontinentima ali nismo uspjeli napravit da radi
+pa smo barem stavili usporedbu među 2 države,
+ovaj API nemože dohvatit glavne gradove od države a druge koje smo probali koristit imaju još manje informacija za prikazat ili ne rade uopće,
+pokušat ćemo nač neki koji radi i može ispisat sve podatke koje može od država 
+(za sad samo glavne gradove i na nekima nemaju izračunatu gustoću po km²), osim toga zadovoljni smo sa stranicom.

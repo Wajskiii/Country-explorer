@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="hr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Country Explorer | Istraživač država</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="container">
+    <div class="main-card">
+        <div class="header">
+            <h1> Istraživač država</h1>
+            <p>Otkrij sve informacije o državama svijeta</p>
+        </div>
+
+        <div class="search-area">
+            <div class="filter-bar">
+                <button class="compare-btn" id="compareBtn">Usporedi dvije države</button>
+            </div>
+
+            <!-- Usporedba -->
+            <div id="compareSection" class="compare-section" style="display: none;">
+                <select id="compareCountry1" class="compare-select">
+                    <option value="">Odaberite prvu državu</option>
+                </select>
+                <select id="compareCountry2" class="compare-select">
+                    <option value="">Odaberite drugu državu</option>
+                </select>
+                <button id="doCompareBtn" class="compare-btn"> Usporedi</button>
+                <button id="closeCompareBtn" class="compare-btn" style="background: #6c757d;">Zatvori</button>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Klikni ili počni tipkati za pretragu država.." autocomplete="off">
+                <div id="dropdownList" class="dropdown-list"></div>
+            </div>
+        </div>
+
+        <div id="flagSection" class="flag-section">
+            <div class="empty-state" style="color: #000000;">
+                 Klikni u polje za pretragu ili počni tipkati naziv države
+            </div>
+        </div>
+
+        <div id="infoGrid" class="info-grid"></div>
+
+        <div style="background: #f8faf8; padding: 2rem; border-top: 1px solid #e0e8e5;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
+                
+                <!-- O projektu -->
+                <div>
+                    <h3 style="color: #481797; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                     O projektu
+                    </h3>
+                    <p style="color: #2d3e3a; line-height: 1.5; font-size: 0.9rem;">
+                        Istraživač država je web aplikacija koja prikuplja podatke s 
+                        REST Countries API (restcountries.com) preko Python backend-a. 
+                        Prikazuje sve bitne informacije o svakoj državi svijeta.
+                    </p>
+                    <p style="color: #5a7c72; margin-top: 0.8rem; font-size: 0.85rem;">
+                        Podaci ažurirani: 2025.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 style="color: #481797; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                     Kako koristiti
+                    </h3>
+                    <ul style="color: #2d3e3a; line-height: 1.6; font-size: 0.9rem; padding-left: 1.2rem;">
+                        <li>Klikni u polje ili počni tipkati naziv države</li>
+                        <li>Ako klikneš "Usporedi dvije države" možeš odabrat dvije države</li>
+                        <li>Klik na "Otvori mapu" vidi lokaciju države na google mapama</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 style="color: #481797; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+                     Tehnologije korištene za stranicu
+                    </h3>
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                        <span style="background: #e8f3ef; padding: 0.3rem 0.8rem; border-radius: 2rem; font-size: 0.8rem;">Python Flask</span>
+                        <span style="background: #e8f3ef; padding: 0.3rem 0.8rem; border-radius: 2rem; font-size: 0.8rem;">REST API</span>
+                        <span style="background: #e8f3ef; padding: 0.3rem 0.8rem; border-radius: 2rem; font-size: 0.8rem;">HTML5/CSS</span>
+                        <span style="background: #e8f3ef; padding: 0.3rem 0.8rem; border-radius: 2rem; font-size: 0.8rem;">JavaScript</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Podaci povučeni iz: restcountries.com/v3.1</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const dropdownList = document.getElementById('dropdownList');
+    const flagSection = document.getElementById('flagSection');
+    const infoGrid = document.getElementById('infoGrid');
+    
+    const BACKEND_URL = "http://127.0.0.1:5000";
+    let allCountries = [];
+    let allCountriesData = [];
+    let currentContinent = "all";
+    let isCompareMode = false;
+    
+    async function loadAllCountries() {
+    try {
+        const res = await fetch(`${BACKEND_URL}/countries`);
+        if (!res.ok) throw new Error('Ne mogu dohvatiti države');
+        const data = await res.json();
+        if (data.error) throw new Error(data.error);
+        
+        allCountries = data.map(c => c.name).sort();
+        await loadAllCountriesDetails();
+        console.log(`Učitano ${allCountries.length} država`);
+    } catch (err) {
+        console.error(err);
+        flagSection.innerHTML = `<div class="error-state">Greška: ${err.message}<br>Provjeri backend!</div>`;
+    }
+}
+    
+    async function loadAllCountriesDetails() {
+        for (const countryName of allCountries) {
+            try {
+                const res = await fetch(`${BACKEND_URL}/country?name=${encodeURIComponent(countryName)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    allCountriesData.push({
+                        name: data.name,
+                        continent: data.continent
+                    });
+                }
+            } catch (err) {
+                console.error(`Greška za ${countryName}`);
+            }
+        }
+    }
+    
+    async function getCountryContinent(countryName) {
+        const cached = allCountriesData.find(c => c.name === countryName);
+        if (cached) return cached.continent;
+        
+        try {
+            const res = await fetch(`${BACKEND_URL}/country?name=${encodeURIComponent(countryName)}`);
+            if (res.ok) {
+                const data = await res.json();
+                allCountriesData.push({ name: data.name, continent: data.continent });
+                return data.continent;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        return null;
+    }
+    
+    async function filterCountries(searchText) {
+        let filtered = [...allCountries];
+        
+        if (currentContinent !== "all") {
+            const filteredByContinent = [];
+            for (const country of filtered) {
+                const continent = await getCountryContinent(country);
+                if (continent === currentContinent) {
+                    filteredByContinent.push(country);
+                }
+            }
+            filtered = filteredByContinent;
+        }
+        
+        if (searchText && searchText.length > 0) {
+            const lowerText = searchText.toLowerCase();
+            filtered = filtered.filter(country => 
+                country.toLowerCase().includes(lowerText)
+            );
+        }
+        
+        return filtered;
+    }
+    
+    async function showDropdown(countries) {
+        if (countries.length === 0) {
+            dropdownList.classList.remove('show');
+            return;
+        }
+        
+        dropdownList.innerHTML = countries.map(country => 
+            `<div class="dropdown-item" data-country="${country}">${country}</div>`
+        ).join('');
+        dropdownList.classList.add('show');
+        
+        document.querySelectorAll('.dropdown-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const countryName = item.getAttribute('data-country');
+                searchInput.value = countryName;
+                dropdownList.classList.remove('show');
+                loadCountryDetails(countryName);
+            });
+        });
+    }
+    
+    async function loadCountryDetails(countryName) {
+        if (isCompareMode) return;
+        
+        flagSection.innerHTML = '<div class="loading-state"><div class="spinner"></div><div>Učitavam podatke..</div></div>';
+        infoGrid.innerHTML = '';
+        
+        try {
+            const res = await fetch(`${BACKEND_URL}/country?name=${encodeURIComponent(countryName)}`);
+            if (!res.ok) throw new Error('Država nije pronađena');
+            const country = await res.json();
+            
+            flagSection.innerHTML = `
+                <img class="flag-img" src="${country.flag}" onerror="this.src='https://via.placeholder.com/200x120?text=🚩'">
+                <div class="country-name">${country.name}</div>
+            `;
+            
+            let currencyText = "Nepoznato";
+            if (country.currencies && Object.keys(country.currencies).length > 0) {
+                const curr = Object.values(country.currencies)[0];
+                if (curr) currencyText = `${curr.name} (${curr.symbol || '?'})`;
+            }
+            
+            let languagesText = "Nepoznato";
+            if (country.languages && Object.keys(country.languages).length > 0) {
+                languagesText = Object.values(country.languages).join(', ');
+            }
+            
+            const areaText = country.area ? `${country.area.toLocaleString()} km²` : 'Nepoznato';
+            const densityText = country.density ? `${country.density.toLocaleString()} /km²` : 
+                                (country.population && country.area ? `${Math.round(country.population/country.area).toLocaleString()} /km²` : 'N/A');
+            const populationText = country.population ? country.population.toLocaleString() : 'Nepoznato';
+            
+            let bordersHtml = '';
+            if (country.borders && country.borders.length) {
+                bordersHtml = '<div class="border-buttons">';
+                country.borders.forEach(code => {
+                    bordersHtml += `<button class="border-btn" data-code="${code}">${code}</button>`;
+                });
+                bordersHtml += '</div>';
+            } else {
+                bordersHtml = '<span class="info-value">Nema susjednih država</span>';
+            }
+            
+            const mapsLink = country.maps || `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(country.capital + ', ' + country.name)}`;
+            
+            infoGrid.innerHTML = `
+                <div class="info-card">
+                    <div class="card-title">Osnovne informacije</div>
+                    <div class="info-row"><span class="info-label">Kontinent:</span><span class="info-value">${country.continent || 'Nepoznato'}</span></div>
+                    <div class="info-row"><span class="info-label">Broj stanovnika:</span><span class="info-value">${populationText}</span></div>
+                    <div class="info-row"><span class="info-label">Površina:</span><span class="info-value">${areaText}</span></div>
+                    <div class="info-row"><span class="info-label">Gustoća naseljenosti:</span><span class="info-value">${densityText}</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="card-title"> Ekonomija</div>
+                    <div class="info-row"><span class="info-label">Valuta:</span><span class="info-value">${currencyText}</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="card-title"> Jezici</div>
+                    <div class="info-row"><span class="info-label">Službeni jezici:</span><span class="info-value">${languagesText}</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="card-title"> Geografija</div>
+                    <div class="info-row"><span class="info-label">Susjedne države:</span>${bordersHtml}</div>
+                    <div class="info-row"><span class="info-label">Google Maps:</span><a class="map-link" href="${mapsLink}" target="_blank">Otvori mapu</a></div>
+                </div>
+            `;
+            
+            document.querySelectorAll('.border-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const code = btn.getAttribute('data-code');
+                    alert(`Šifra susjedne države: ${code}`);
+                });
+            });
+            
+        } catch (err) {
+            console.error(err);
+            flagSection.innerHTML = `<div class="error-state"> Greška: ${err.message}</div>`;
+            infoGrid.innerHTML = '';
+        }
+    }
+    
+    async function compareCountries(countryName1, countryName2) {
+        flagSection.innerHTML = '<div class="loading-state"><div class="spinner"></div><div>Učitavam podatke za usporedbu...</div></div>';
+        infoGrid.innerHTML = '';
+        
+        try {
+            const [res1, res2] = await Promise.all([
+                fetch(`${BACKEND_URL}/country?name=${encodeURIComponent(countryName1)}`),
+                fetch(`${BACKEND_URL}/country?name=${encodeURIComponent(countryName2)}`)
+            ]);
+            
+            if (!res1.ok || !res2.ok) throw new Error('Država nije pronađena');
+            
+            const country1 = await res1.json();
+            const country2 = await res2.json();
+            
+            flagSection.innerHTML = `
+                <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
+                    <div style="text-align: center;">
+                        <img class="flag-img" src="${country1.flag}" onerror="this.src='https://via.placeholder.com/200x120?text=🚩'">
+                        <div class="country-name">${country1.name}</div>
+                    </div>
+                    <div style="text-align: center;">
+                        <img class="flag-img" src="${country2.flag}" onerror="this.src='https://via.placeholder.com/200x120?text=🚩'">
+                        <div class="country-name">${country2.name}</div>
+                    </div>
+                </div>
+            `;
+            
+            const formatCountryData = (country) => {
+                let currencyText = "Nepoznato";
+                if (country.currencies && Object.keys(country.currencies).length > 0) {
+                    const curr = Object.values(country.currencies)[0];
+                    if (curr) currencyText = `${curr.name} (${curr.symbol || '?'})`;
+                }
+                
+                let languagesText = "Nepoznato";
+                if (country.languages && Object.keys(country.languages).length > 0) {
+                    languagesText = Object.values(country.languages).join(', ');
+                }
+                
+                return {
+                    continent: country.continent || 'Nepoznato',
+                    population: country.population ? country.population.toLocaleString() : 'Nepoznato',
+                    area: country.area ? `${country.area.toLocaleString()} km²` : 'Nepoznato',
+                    density: country.density ? `${country.density.toLocaleString()} /km²` : 
+                            (country.population && country.area ? `${Math.round(country.population/country.area).toLocaleString()} /km²` : 'N/A'),
+                    currency: currencyText,
+                    languages: languagesText
+                };
+            };
+            
+            const data1 = formatCountryData(country1);
+            const data2 = formatCountryData(country2);
+            
+            infoGrid.innerHTML = `
+                <div class="info-card">
+                    <div class="card-title">${country1.name}</div>
+                    <div class="info-row"><span class="info-label">Kontinent:</span><span class="info-value">${data1.continent}</span></div>
+                    <div class="info-row"><span class="info-label">Stanovništvo:</span><span class="info-value">${data1.population}</span></div>
+                    <div class="info-row"><span class="info-label">Površina:</span><span class="info-value">${data1.area}</span></div>
+                    <div class="info-row"><span class="info-label">Gustoća:</span><span class="info-value">${data1.density}</span></div>
+                    <div class="info-row"><span class="info-label">Valuta:</span><span class="info-value">${data1.currency}</span></div>
+                    <div class="info-row"><span class="info-label">Jezici:</span><span class="info-value">${data1.languages}</span></div>
+                </div>
+                <div class="info-card">
+                    <div class="card-title"> ${country2.name}</div>
+                    <div class="info-row"><span class="info-label">Kontinent:</span><span class="info-value">${data2.continent}</span></div>
+                    <div class="info-row"><span class="info-label">Stanovništvo:</span><span class="info-value">${data2.population}</span></div>
+                    <div class="info-row"><span class="info-label">Površina:</span><span class="info-value">${data2.area}</span></div>
+                    <div class="info-row"><span class="info-label">Gustoća:</span><span class="info-value">${data2.density}</span></div>
+                    <div class="info-row"><span class="info-label">Valuta:</span><span class="info-value">${data2.currency}</span></div>
+                    <div class="info-row"><span class="info-label">Jezici:</span><span class="info-value">${data2.languages}</span></div>
+                </div>
+            `;
+            
+        } catch (err) {
+            console.error(err);
+            flagSection.innerHTML = `<div class="error-state"> Greška: ${err.message}</div>`;
+            infoGrid.innerHTML = '';
+        }
+    }
+    
+    async function populateCompareSelects() {
+        const select1 = document.getElementById('compareCountry1');
+        const select2 = document.getElementById('compareCountry2');
+        
+        select1.innerHTML = '<option value="">-- Odaberite prvu državu --</option>';
+        select2.innerHTML = '<option value="">-- Odaberite drugu državu --</option>';
+        
+        for (const country of allCountries) {
+            const option1 = document.createElement('option');
+            option1.value = country;
+            option1.textContent = country;
+            select1.appendChild(option1);
+            
+            const option2 = document.createElement('option');
+            option2.value = country;
+            option2.textContent = country;
+            select2.appendChild(option2);
+        }
+    }
+    
+    // Event listeneri za filter po kontinentu
+    
+    document.getElementById('compareBtn').addEventListener('click', async () => {
+        isCompareMode = true;
+        document.getElementById('compareSection').style.display = 'flex';
+        await populateCompareSelects();
+        flagSection.innerHTML = '<div class="empty-state" style="color: #000000;"> Odaberite dvije države za usporedbu</div>';
+        infoGrid.innerHTML = '';
+        searchInput.disabled = true;
+        searchInput.placeholder = "Usporedba način rada: isključeno za pretragu";
+    });
+    
+    document.getElementById('closeCompareBtn').addEventListener('click', () => {
+        isCompareMode = false;
+        document.getElementById('compareSection').style.display = 'none';
+        searchInput.disabled = false;
+        searchInput.placeholder = " Klikni ili počni tipkati za pretragu država..";
+        searchInput.value = '';
+        flagSection.innerHTML = '<div class="empty-state" style="color: #000000;"> Klikni u polje za pretragu ili počnite tipkati naziv države</div>';
+        infoGrid.innerHTML = '';
+    });
+    
+    document.getElementById('doCompareBtn').addEventListener('click', () => {
+        const country1 = document.getElementById('compareCountry1').value;
+        const country2 = document.getElementById('compareCountry2').value;
+        
+        if (!country1 || !country2) {
+            alert('Molimo odaberite obje države za usporedbu!');
+            return;
+        }
+        
+        if (country1 === country2) {
+            alert('Molimo odaberite dvije različite države!');
+            return;
+        }
+        
+        compareCountries(country1, country2);
+    });
+    
+    searchInput.addEventListener('click', async () => {
+        if (!isCompareMode) {
+            const allFiltered = await filterCountries(searchInput.value);
+            showDropdown(allFiltered);
+        }
+    });
+    
+    searchInput.addEventListener('input', async (e) => {
+        if (!isCompareMode) {
+            const filtered = await filterCountries(e.target.value);
+            showDropdown(filtered);
+        }
+    });
+    
+    document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !dropdownList.contains(e.target)) {
+            dropdownList.classList.remove('show');
+        }
+    });
+    
+    searchInput.addEventListener('keypress', async (e) => {
+        if (!isCompareMode && e.key === 'Enter' && searchInput.value.trim()) {
+            dropdownList.classList.remove('show');
+            loadCountryDetails(searchInput.value.trim());
+        }
+    });
+    
+    loadAllCountries();
+</script>
+</body>
+</html>
