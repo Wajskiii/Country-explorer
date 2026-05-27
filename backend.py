@@ -26,6 +26,10 @@ def get_countries():
         print(f"Greška: {e}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/')
+def home():
+    return jsonify({"message": "Backend radi Koristi /countries za listu država"})
+
 @app.route("/country")
 def get_country():
     name = request.args.get("name")
