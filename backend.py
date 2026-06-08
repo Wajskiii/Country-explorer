@@ -28,7 +28,7 @@ def get_countries():
 
 @app.route('/')
 def home():
-    return jsonify({"message": "Backend radi Koristi /countries za listu država"})
+    return jsonify({"message": "hallloo"})
 
 @app.route("/country")
 def get_country():
@@ -62,6 +62,7 @@ def get_country():
             "population": data.get("population"),
             "area": data.get("area"),
             "currencies": currency,
+            "timezones": data.get("timezones", []),
             "languages": languages,
             "borders": data.get("borders", []),
             "maps": data.get("maps", {}).get("googleMaps")

@@ -48,7 +48,6 @@
         <div style="background: #f8faf8; padding: 2rem; border-top: 1px solid #e0e8e5;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 2rem; max-width: 1000px; margin: 0 auto;">
                 
-                <!-- O projektu -->
                 <div>
                     <h3 style="color: #481797; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
                      O projektu
@@ -100,7 +99,7 @@
     const flagSection = document.getElementById('flagSection');
     const infoGrid = document.getElementById('infoGrid');
     
-    const BACKEND_URL = "https://country-explorer-psj3.onrender.com";
+    const BACKEND_URL = "http://127.0.0.1:5000";
     let allCountries = [];
     let allCountriesData = [];
     let currentContinent = "all";
@@ -253,6 +252,8 @@
                     <div class="info-row"><span class="info-label">Kontinent:</span><span class="info-value">${country.continent || 'Nepoznato'}</span></div>
                     <div class="info-row"><span class="info-label">Broj stanovnika:</span><span class="info-value">${populationText}</span></div>
                     <div class="info-row"><span class="info-label">Površina:</span><span class="info-value">${areaText}</span></div>
+                    <div class="info-row">
+                    <span class="info-label">Vremenska zona:</span><span class="info-value">${country.timezones?.[0] || 'Nepoznato'}</span></div>
                     <div class="info-row"><span class="info-label">Gustoća naseljenosti:</span><span class="info-value">${densityText}</span></div>
                 </div>
                 <div class="info-card">
@@ -302,11 +303,11 @@
             flagSection.innerHTML = `
                 <div style="display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap;">
                     <div style="text-align: center;">
-                        <img class="flag-img" src="${country1.flag}" onerror="this.src='https://via.placeholder.com/200x120?text=🚩'">
+                        <img class="flag-img" src="${country1.flag}" onerror="this.src='https://via.placeholder.com/200x120?text='">
                         <div class="country-name">${country1.name}</div>
                     </div>
                     <div style="text-align: center;">
-                        <img class="flag-img" src="${country2.flag}" onerror="this.src='https://via.placeholder.com/200x120?text=🚩'">
+                        <img class="flag-img" src="${country2.flag}" onerror="this.src='https://via.placeholder.com/200x120?text='">
                         <div class="country-name">${country2.name}</div>
                     </div>
                 </div>
